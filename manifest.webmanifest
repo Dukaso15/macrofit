@@ -1,0 +1,35 @@
+{
+  "name": "MacroFit — Diario de macros",
+  "short_name": "MacroFit",
+  "description": "Registra lo que comes y controla tus macros leyendo la etiqueta nutricional con la cámara.",
+  "lang": "es-ES",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F6F8",
+  "theme_color": "#12A150",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Escanear etiqueta",
+      "short_name": "Escanear",
+      "description": "Fotografía una etiqueta nutricional y añádela al diario",
+      "url": "./index.html?action=scan",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Añadir comida",
+      "short_name": "Añadir",
+      "description": "Busca un alimento y regístralo",
+      "url": "./index.html?action=add",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

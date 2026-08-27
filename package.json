@@ -1,0 +1,13 @@
+{
+  "name": "macrofit",
+  "version": "1.0.0",
+  "description": "Diario de comidas y macros con lectura de etiquetas nutricionales. PWA sin dependencias.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/parser.test.mjs",
+    "dev": "python -m http.server 8123",
+    "icons": "python tools/make_icons.py"
+  },
+  "license": "MIT"
+}
