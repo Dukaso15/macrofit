@@ -10,10 +10,38 @@ const DB_VERSION = 1;
 
 let dbPromise = null;
 
+/** Si el navegador no contesta en este tiempo, damos la apertura por fallida. */
+const OPEN_TIMEOUT = 8000;
+
 function open() {
   if (dbPromise) return dbPromise;
+
   dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    let settled = false;
+    const finish = (fn) => (v) => { if (!settled) { settled = true; clearTimeout(timer); fn(v); } };
+    const ok = finish(resolve);
+    const ko = finish(reject);
+
+    // IndexedDB puede no responder nunca: otra pestana a medio actualizar, modo
+    // privado, o el almacenamiento en mal estado. Sin este tope la app se
+    // quedaria en "Cargando" para siempre y sin explicar por que.
+    const timer = setTimeout(
+      () => ko(new Error('El almacenamiento del navegador no responde. Cierra las demás pestañas de MacroFit y vuelve a intentarlo.')),
+      OPEN_TIMEOUT
+    );
+
+    if (typeof indexedDB === 'undefined' || !indexedDB) {
+      ko(new Error('Este navegador no permite guardar datos. Si estás en una ventana privada, ábrela en una normal.'));
+      return;
+    }
+
+    let req;
+    try {
+      req = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (err) {
+      ko(new Error('No se ha podido abrir el almacenamiento: ' + (err && err.message ? err.message : err)));
+      return;
+    }
 
     req.onupgradeneeded = (ev) => {
       const db = req.result;
@@ -43,10 +71,14 @@ function open() {
       void ev;
     };
 
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-    req.onblocked = () => reject(new Error('Hay otra pestana de la app abierta bloqueando la actualizacion.'));
+    req.onsuccess = () => ok(req.result);
+    req.onerror = () => ko(req.error || new Error('No se ha podido abrir el almacenamiento.'));
+    req.onblocked = () => ko(new Error('Hay otra pestaña de MacroFit abierta bloqueando la actualización. Ciérrala y recarga.'));
   });
+
+  // Si falla, se olvida la promesa para que un reintento pueda volver a probar.
+  dbPromise.catch(() => { dbPromise = null; });
+
   return dbPromise;
 }
 

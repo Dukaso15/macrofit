@@ -1848,11 +1848,22 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-boot().catch((err) => {
+/** Pantalla de arranque fallido, con salida: siempre se puede reintentar. */
+function bootFailed(err) {
   console.error(err);
-  app.innerHTML = `<div class="empty" style="padding-top:30vh">
+  app.innerHTML = `<div class="empty" style="padding-top:26vh">
     <div class="ico">😕</div>
-    <p>No se ha podido iniciar la aplicación.</p>
-    <p class="tiny">${esc(err.message || err)}</p>
+    <p style="margin:0 0 6px">No se ha podido iniciar MacroFit.</p>
+    <p class="tiny" style="max-width:30ch;margin:0 auto 18px">${esc(err && err.message ? err.message : err)}</p>
+    <button class="btn btn-primary" data-retry>Reintentar</button>
+    <p class="tiny faint" style="margin-top:18px;max-width:32ch;margin-left:auto;margin-right:auto">
+      Tus datos siguen guardados. Si el problema no se va, cierra las demás pestañas de MacroFit y vuelve a abrirla.
+    </p>
   </div>`;
-});
+  app.querySelector('[data-retry]').addEventListener('click', () => {
+    app.innerHTML = '<div class="empty" style="padding-top:38vh"><div class="ico">🍳</div><div>Cargando…</div></div>';
+    boot().catch(bootFailed);
+  });
+}
+
+boot().catch(bootFailed);

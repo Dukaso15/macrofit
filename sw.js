@@ -5,7 +5,7 @@
  * Al publicar una version nueva basta con cambiar CACHE_VERSION.
  */
 
-const CACHE_VERSION = 'macrofit-v4';
+const CACHE_VERSION = 'macrofit-v5';
 
 const SHELL = [
   './',
