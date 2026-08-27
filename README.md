@@ -68,10 +68,10 @@ python -m http.server 8123 --directory macrofit
 
 Y abre `http://localhost:8123`.
 
-Pruebas del analizador de etiquetas (10 etiquetas reales, 79 comprobaciones):
+Pruebas (163 comprobaciones: 12 etiquetas reales y las copias manipuladas):
 
 ```bash
-node tests/parser.test.mjs
+npm test
 ```
 
 Regenerar los iconos:
@@ -87,12 +87,53 @@ python tools/make_icons.py
 | `js/parser.js` | Analiza el texto de la etiqueta. Sin dependencias, probado aparte. |
 | `js/calc.js` | Metabolismo basal, gasto total, reparto de macros, fechas. |
 | `js/store.js` | IndexedDB: alimentos, diario, pesos, ajustes, exportar/importar. |
+| `js/sanitize.js` | Valida las copias que se importan. Probado aparte. |
+| `js/theme-boot.js` | Tema y anti-iframe antes del primer pintado. |
 | `js/seed-foods.js` | Los 86 alimentos básicos iniciales. |
 | `js/app.js` | Vistas, navegación y flujos. |
 | `sw.js` | Service worker: la app funciona sin conexión. |
 
 Al publicar cambios, sube `CACHE_VERSION` en `sw.js` para que los móviles ya
 instalados se actualicen.
+
+---
+
+## Seguridad
+
+La app no tiene servidor, ni backend, ni cuentas, ni una sola llamada a un
+dominio externo: todo lo que carga sale de su propio origen. Aun así lleva estas
+defensas, en tres capas independientes.
+
+**Content-Security-Policy** (`index.html`). `script-src 'self'` hace que el
+navegador rechace cualquier script incrustado en la página, que es exactamente
+como se ejecuta un XSS. `connect-src 'self'` impide que la app envíe datos a
+ninguna parte aunque alguien lograra inyectar código. Por eso el arranque del
+tema vive en `js/theme-boot.js` y no en un `<script>` dentro del HTML.
+
+**Saneado de las importaciones** (`js/sanitize.js`). Un `.json` de copia de
+seguridad es lo único que entra en la app sin haberlo escrito ella. En vez de
+confiar en su forma, se reconstruye campo a campo: los números se fuerzan a
+número y se acotan, las listas de opciones pasan por lista blanca, las fotos
+solo se aceptan si son imágenes reales, y las claves desconocidas se tiran. Al
+terminar te dice cuántas entradas ha descartado.
+
+**Escapado en la interfaz** (`esc()` en `js/app.js`). Todo dato que venga de ti
+o de una etiqueta se escapa antes de pintarse, tanto en texto como dentro de
+atributos.
+
+Además, la app se niega a pintarse si alguien la incrusta en un iframe, para
+que no puedan superponerle botones falsos.
+
+Las pruebas de `tests/sanitize.test.mjs` importan copias manipuladas con cargas
+de ataque reales y comprueban que no se ejecuta nada.
+
+### Lo que estas defensas no cubren
+
+`https://dukaso15.github.io` es **un único origen compartido por todos** los
+proyectos publicados con GitHub Pages en esa cuenta. Cualquier otro proyecto que
+publiques ahí podrá leer el almacenamiento de MacroFit, porque para el navegador
+son la misma web. Publica ahí solo código tuyo o en el que confíes. Si algún día
+quieres aislamiento real, hace falta un dominio propio o una cuenta aparte.
 
 ---
 

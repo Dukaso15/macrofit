@@ -6,6 +6,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="description" content="Diario de comidas y macros con lectura de etiquetas nutricionales.">
 
+<!--
+  La app no habla con ningun servidor: todo lo que necesita esta en su propio
+  origen. Esta politica lo hace explicito, de modo que si alguna vez se colara
+  texto malicioso en la interfaz, el navegador se negaria a ejecutarlo.
+
+  - script-src 'self': nada de scripts incrustados en la pagina ni de terceros.
+  - connect-src 'self': la app no puede enviar tus datos a ninguna parte.
+  - style-src admite 'unsafe-inline' porque la interfaz usa atributos style=".
+    Es la unica concesion, y afecta a estilos, no a codigo ejecutable.
+  - frame-ancestors no funciona en una etiqueta meta (solo como cabecera HTTP,
+    que GitHub Pages no deja poner); se cubre desde js/theme-boot.js.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' blob:;
+  font-src 'self';
+  connect-src 'self';
+  manifest-src 'self';
+  worker-src 'self';
+  media-src 'none';
+  object-src 'none';
+  frame-src 'none';
+  child-src 'none';
+  base-uri 'none';
+  form-action 'none';
+">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -21,13 +50,7 @@
 
 <link rel="stylesheet" href="css/app.css">
 
-<script>
-  // Aplica el tema guardado antes del primer pintado para evitar el parpadeo.
-  try {
-    var t = localStorage.getItem('macrofit.theme');
-    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-  } catch (e) {}
-</script>
+<script src="js/theme-boot.js"></script>
 </head>
 <body>
 

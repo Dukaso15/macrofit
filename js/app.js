@@ -350,7 +350,7 @@ function pickDate() {
     body: `
       <div class="field">
         <label for="dpick">Fecha</label>
-        <input class="input" type="date" id="dpick" value="${state.date}" max="${addDays(dayKey(), 365)}">
+        <input class="input" type="date" id="dpick" value="${esc(state.date)}" max="${addDays(dayKey(), 365)}">
       </div>
       <div class="chip-row">
         <button class="chip" data-jump="0">Hoy</button>
@@ -847,7 +847,7 @@ function openQuantitySheet(food, meal, onDone) {
       <div class="field">
         <label for="qty">Cantidad</label>
         <div class="input-suffix">
-          <input class="input" id="qty" type="text" inputmode="decimal" value="${grams}">
+          <input class="input" id="qty" type="text" inputmode="decimal" value="${esc(grams)}">
           <span class="suffix">${esc(food.unit)}</span>
         </div>
       </div>
@@ -1309,7 +1309,7 @@ function addWeightSheet() {
       <div class="field">
         <label for="wkg">Peso</label>
         <div class="input-suffix">
-          <input class="input" id="wkg" type="text" inputmode="decimal" value="${state.profile.weightKg}">
+          <input class="input" id="wkg" type="text" inputmode="decimal" value="${esc(state.profile.weightKg)}">
           <span class="suffix">kg</span>
         </div>
       </div>
@@ -1401,11 +1401,11 @@ function renderGoalsScreen(isOnboarding) {
       </div>
       <div class="grid-3">
         <div class="field"><label for="age">Edad</label>
-          <input class="input" id="age" type="text" inputmode="numeric" value="${p.age}"></div>
+          <input class="input" id="age" type="text" inputmode="numeric" value="${esc(p.age)}"></div>
         <div class="field"><label for="height">Altura cm</label>
-          <input class="input" id="height" type="text" inputmode="numeric" value="${p.heightCm}"></div>
+          <input class="input" id="height" type="text" inputmode="numeric" value="${esc(p.heightCm)}"></div>
         <div class="field"><label for="weight">Peso kg</label>
-          <input class="input" id="weight" type="text" inputmode="decimal" value="${p.weightKg}"></div>
+          <input class="input" id="weight" type="text" inputmode="decimal" value="${esc(p.weightKg)}"></div>
       </div>
       <div class="field" style="margin-bottom:0">
         <label for="activity">Nivel de actividad</label>
@@ -1439,11 +1439,11 @@ function renderGoalsScreen(isOnboarding) {
       ${p.preset === 'custom' ? `
         <div class="grid-3">
           <div class="field"><label>Proteína %</label>
-            <input class="input" id="sp" type="text" inputmode="numeric" value="${p.split.protein}"></div>
+            <input class="input" id="sp" type="text" inputmode="numeric" value="${esc(p.split.protein)}"></div>
           <div class="field"><label>Carbos %</label>
-            <input class="input" id="sc" type="text" inputmode="numeric" value="${p.split.carbs}"></div>
+            <input class="input" id="sc" type="text" inputmode="numeric" value="${esc(p.split.carbs)}"></div>
           <div class="field"><label>Grasa %</label>
-            <input class="input" id="sf" type="text" inputmode="numeric" value="${p.split.fat}"></div>
+            <input class="input" id="sf" type="text" inputmode="numeric" value="${esc(p.split.fat)}"></div>
         </div>`
       : `<p class="tiny faint" style="margin:0">${esc((MACRO_PRESETS.find((m) => m.id === p.preset) || MACRO_PRESETS[0]).hint)}</p>`}
       <label class="row small" style="gap:8px;margin-top:12px">
@@ -1454,7 +1454,7 @@ function renderGoalsScreen(isOnboarding) {
         <div class="field" style="margin:10px 0 0">
           <label for="ppkv">Gramos por kg: <b style="color:var(--text)">${fmt(p.proteinPerKg, 1)} g/kg</b>
             → ${Math.round(p.proteinPerKg * p.weightKg)} g al día</label>
-          <input type="range" id="ppkv" min="1.2" max="2.6" step="0.1" value="${p.proteinPerKg}">
+          <input type="range" id="ppkv" min="1.2" max="2.6" step="0.1" value="${esc(p.proteinPerKg)}">
         </div>` : ''}
     </div>`;
 
@@ -1464,17 +1464,17 @@ function renderGoalsScreen(isOnboarding) {
       <div class="field">
         <label for="mkcal">Calorías diarias</label>
         <div class="input-suffix">
-          <input class="input" id="mkcal" type="text" inputmode="numeric" value="${p.manual.kcal}">
+          <input class="input" id="mkcal" type="text" inputmode="numeric" value="${esc(p.manual.kcal)}">
           <span class="suffix">kcal</span>
         </div>
       </div>
       <div class="grid-3">
         <div class="field"><label>Proteína g</label>
-          <input class="input" id="mp" type="text" inputmode="numeric" value="${p.manual.protein}"></div>
+          <input class="input" id="mp" type="text" inputmode="numeric" value="${esc(p.manual.protein)}"></div>
         <div class="field"><label>Carbos g</label>
-          <input class="input" id="mc" type="text" inputmode="numeric" value="${p.manual.carbs}"></div>
+          <input class="input" id="mc" type="text" inputmode="numeric" value="${esc(p.manual.carbs)}"></div>
         <div class="field"><label>Grasa g</label>
-          <input class="input" id="mf" type="text" inputmode="numeric" value="${p.manual.fat}"></div>
+          <input class="input" id="mf" type="text" inputmode="numeric" value="${esc(p.manual.fat)}"></div>
       </div>
       <div id="mcheck" class="note"></div>
     </div>`;
@@ -1705,7 +1705,12 @@ async function doImport(ev) {
   try {
     const res = await importAll(data, replace ? 'replace' : 'merge');
     await boot(true);
-    toast(`Importados ${res.foods} alimentos y ${res.entries} registros`);
+    const d = res.descartados || {};
+    const tirados = (d.foods || 0) + (d.entries || 0) + (d.weights || 0) + (d.meta || 0);
+    toast(
+      `Importados ${res.foods} alimentos y ${res.entries} registros` +
+      (tirados ? ` · ${tirados} entrada${tirados === 1 ? '' : 's'} con datos inválidos descartada${tirados === 1 ? '' : 's'}` : '')
+    );
   } catch (err) {
     toast(err.message || 'No se ha podido importar');
   }

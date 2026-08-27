@@ -5,7 +5,7 @@
  * Al publicar una version nueva basta con cambiar CACHE_VERSION.
  */
 
-const CACHE_VERSION = 'macrofit-v3';
+const CACHE_VERSION = 'macrofit-v4';
 
 const SHELL = [
   './',
@@ -13,6 +13,8 @@ const SHELL = [
   './manifest.webmanifest',
   './css/app.css',
   './js/app.js',
+  './js/theme-boot.js',
+  './js/sanitize.js',
   './js/calc.js',
   './js/parser.js',
   './js/store.js',

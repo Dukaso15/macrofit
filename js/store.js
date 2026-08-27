@@ -3,6 +3,8 @@
  * Todo vive en el movil: no hay servidor ni cuentas.
  */
 
+import { sanitizeBackup } from './sanitize.js';
+
 const DB_NAME = 'macrofit';
 const DB_VERSION = 1;
 
@@ -268,10 +270,10 @@ async function blobToDataUrl(blob) {
   });
 }
 
-function dataUrlToBlob(dataUrl) {
+/** El tipo lo decide quien llama, nunca el propio fichero. */
+function dataUrlToBlob(dataUrl, mime = 'image/jpeg') {
   try {
-    const [head, b64] = dataUrl.split(',');
-    const mime = (head.match(/:(.*?);/) || [])[1] || 'image/jpeg';
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
     const bin = atob(b64);
     const arr = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
@@ -313,13 +315,16 @@ export async function exportAll({ includePhotos = true } = {}) {
 
 /**
  * Restaura una copia de seguridad.
- * @param {object} data       objeto devuelto por exportAll
+ *
+ * El fichero llega de fuera, asi que primero pasa por sanitizeBackup, que lo
+ * reconstruye campo a campo. Lo que entra en la base ya no es lo que traia el
+ * fichero, sino una version comprobada de ello.
+ *
+ * @param {object} rawData     contenido del .json elegido por el usuario
  * @param {'merge'|'replace'} mode
  */
-export async function importAll(data, mode = 'merge') {
-  if (!data || data.app !== 'macrofit') {
-    throw new Error('El fichero no es una copia de seguridad de MacroFit.');
-  }
+export async function importAll(rawData, mode = 'merge') {
+  const { data, stats } = sanitizeBackup(rawData);
 
   const db = await open();
   const t = db.transaction(['foods', 'entries', 'weights', 'meta'], 'readwrite');
@@ -335,25 +340,20 @@ export async function importAll(data, mode = 'merge') {
     sMeta.clear();
   }
 
-  for (const food of data.foods || []) {
-    const copy = { ...food };
-    if (typeof copy.photo === 'string' && copy.photo.startsWith('data:')) {
-      copy.photo = dataUrlToBlob(copy.photo);
-    }
-    copy.search = searchKey(copy.name, copy.brand);
-    sFoods.put(copy);
+  for (const food of data.foods) {
+    sFoods.put({
+      ...food,
+      id: food.id || uid(),
+      photo: food.photo ? dataUrlToBlob(food.photo.dataUrl, food.photo.mime) : null,
+      search: searchKey(food.name, food.brand),
+    });
   }
-  for (const e of data.entries || []) sEntries.put(e);
-  for (const w of data.weights || []) sWeights.put(w);
-  for (const m of data.meta || []) sMeta.put(m);
+  for (const e of data.entries) sEntries.put({ ...e, id: e.id || uid() });
+  for (const w of data.weights) sWeights.put(w);
+  for (const m of data.meta) sMeta.put(m);
 
   return new Promise((resolve, reject) => {
-    t.oncomplete = () =>
-      resolve({
-        foods: (data.foods || []).length,
-        entries: (data.entries || []).length,
-        weights: (data.weights || []).length,
-      });
+    t.oncomplete = () => resolve({ ...stats.total, descartados: stats.descartados });
     t.onerror = () => reject(t.error);
   });
 }

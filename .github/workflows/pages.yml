@@ -27,6 +27,8 @@ jobs:
           node-version: '22'
       - name: Pruebas del analizador de etiquetas
         run: node tests/parser.test.mjs
+      - name: Pruebas de saneado de copias de seguridad
+        run: node tests/sanitize.test.mjs
 
   deploy:
     needs: test
