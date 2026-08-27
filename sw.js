@@ -5,7 +5,7 @@
  * Al publicar una version nueva basta con cambiar CACHE_VERSION.
  */
 
-const CACHE_VERSION = 'macrofit-v2';
+const CACHE_VERSION = 'macrofit-v3';
 
 const SHELL = [
   './',
@@ -26,7 +26,10 @@ const SHELL = [
 self.addEventListener('install', (ev) => {
   ev.waitUntil(
     caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(SHELL))
+      // cache: 'reload' salta la cache HTTP del navegador. Sin esto, al publicar
+      // una version nueva el movil podia seguir guardando los ficheros viejos
+      // durante los 10 minutos de max-age que pone GitHub Pages.
+      .then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
