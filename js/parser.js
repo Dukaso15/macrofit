@@ -270,7 +270,8 @@ function guessName(lines, firstNutrientIdx) {
     if (HEADER_NOISE.test(s) || META_NOISE.test(s)) continue;
     if (PER100_RE.test(s) || PERCENT_RE.test(s)) continue;
     if (/^[\d\s.,%/g-]+$/.test(raw)) continue;
-    if (classify(raw)) continue;
+    // Solo se descarta como fila de la tabla si ademas trae cifras.
+    if (classify(raw) && extractValues(raw).length) continue;
     const letters = (raw.match(/[a-záéíóúñ]/gi) || []).length;
     if (letters < 3 || raw.length > 70) continue;
     candidates.push(raw);
@@ -312,10 +313,12 @@ export function parseLabel(rawText) {
     for (const seg of splitSubclauses(line)) {
       const key = classify(seg);
       if (!key) continue;
-      if (firstNutrientIdx < 0) firstNutrientIdx = idx;
 
+      // Una fila de la tabla lleva numeros. "Bebida sin azucares" nombra el
+      // producto aunque contenga una palabra de nutriente: no es una fila.
       const vals = extractValues(seg);
       if (!vals.length) continue;
+      if (firstNutrientIdx < 0) firstNutrientIdx = idx;
 
       if (key === 'energy') {
         assignEnergy(vals, rows, columns);

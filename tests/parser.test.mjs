@@ -237,6 +237,41 @@ Proteinas 30 g`);
   check('avisa del calculo', r.warnings.some((w) => /calculad/i.test(w)), true);
 });
 
+suite('Caso 11: el nombre lleva una palabra de nutriente', () => {
+  const r = parseLabel(`Bebida de soja sin azucares
+Informacion nutricional por 100 ml
+Valor energetico 138 kJ
+Grasas 1,8 g
+de las cuales saturadas 0,3 g
+Hidratos de carbono 0,5 g
+de los cuales azucares 0,3 g
+Fibra alimentaria 0,6 g
+Proteinas 3,3 g
+Sodio 0,04 g`);
+
+  check('nombre', r.name, 'Bebida de soja sin azucares');
+  check('base ml', r.per.unit, 'ml');
+  check('kcal desde kJ', r.values.energyKcal, 33, 1);
+  check('grasas', r.values.fat, 1.8);
+  check('azucares', r.values.sugars, 0.3);
+  check('proteinas', r.values.protein, 3.3);
+  check('sal desde sodio', r.values.salt, 0.1);
+});
+
+suite('Caso 12: nombres comerciales que suenan a nutriente', () => {
+  const mk = (name) => parseLabel(`${name}
+Por 100 g
+Valor energetico 380 kcal
+Grasas 8 g
+Hidratos de carbono 30 g
+Proteinas 45 g`).name;
+
+  check('Batido de proteinas', mk('Batido de proteinas chocolate'), 'Batido de proteinas chocolate');
+  check('Yogur alto en proteina', mk('Yogur alto en proteina'), 'Yogur alto en proteina');
+  check('Pan con fibra', mk('Pan de molde con fibra'), 'Pan de molde con fibra');
+  check('Sin azucar anadido', mk('Mermelada sin azucar anadido'), 'Mermelada sin azucar anadido');
+});
+
 /* ================================================================== */
 
 console.log(`\n${'-'.repeat(52)}`);
